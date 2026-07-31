@@ -27,12 +27,12 @@ class ReportExportController
                 $machine = $logs->first()->machine;
 
                 return [
-                    $machine->name,
-                    $machine->type,
-                    $logs->sum('output_count'),
-                    round($logs->avg('temperature'), 2),
-                    $logs->where('status', '!=', 'Running')->count(),
-                    $logs->count(),
+                    'machine_name' => $machine->name,
+                    'machine_type' => $machine->type,
+                    'total_output' => $logs->sum('output_count'),
+                    'avg_temperature' => round($logs->avg('temperature'), 2),
+                    'downtime_count' => $logs->where('status', '!=', 'Running')->count(),
+                    'total_logs' => $logs->count(),
                 ];
             })
             ->values();
@@ -41,21 +41,43 @@ class ReportExportController
         if ($shift !== '') {
             $filename .= sprintf('_shift_%s', $shift);
         }
-        $filename .= '.csv';
+        $filename .= '.xls';
 
-        return response()->streamDownload(function () use ($reports) {
-            $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM for Excel UTF-8
-
-            fputcsv($handle, ['Machine Name', 'Type', 'Total Output', 'Avg Temp (°C)', 'Downtime Events', 'Total Logs']);
-
-            foreach ($reports as $row) {
-                fputcsv($handle, $row);
+        return response()->streamDownload(function () use ($reports, $date, $shift) {
+            $title = 'Production Report - ' . $date;
+            if ($shift !== '') {
+                $title .= ' (Shift ' . $shift . ')';
             }
 
-            fclose($handle);
+            echo '<?xml version="1.0" encoding="UTF-8"?>';
+            echo '<?mso-application progid="Excel.Sheet"?>';
+            echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"';
+            echo ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">';
+            echo '<Worksheet ss:Name="Report">';
+            echo '<Table>';
+
+            echo '<Row ss:StyleID="header">';
+            foreach (['Machine Name', 'Type', 'Total Output', 'Avg Temp (°C)', 'Downtime Events', 'Total Logs'] as $header) {
+                echo '<Cell><Data ss:Type="String">' . htmlspecialchars($header) . '</Data></Cell>';
+            }
+            echo '</Row>';
+
+            foreach ($reports as $row) {
+                echo '<Row>';
+                echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row['machine_name']) . '</Data></Cell>';
+                echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row['machine_type']) . '</Data></Cell>';
+                echo '<Cell><Data ss:Type="Number">' . $row['total_output'] . '</Data></Cell>';
+                echo '<Cell><Data ss:Type="Number">' . $row['avg_temperature'] . '</Data></Cell>';
+                echo '<Cell><Data ss:Type="Number">' . $row['downtime_count'] . '</Data></Cell>';
+                echo '<Cell><Data ss:Type="Number">' . $row['total_logs'] . '</Data></Cell>';
+                echo '</Row>';
+            }
+
+            echo '</Table>';
+            echo '</Worksheet>';
+            echo '</Workbook>';
         }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
         ]);
     }
 }

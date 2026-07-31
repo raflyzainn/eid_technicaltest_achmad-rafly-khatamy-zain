@@ -126,7 +126,7 @@ eid_technicaltest_rafly/
 ### 1. Install Dependencies
 
 ```bash
-cd eid_technicaltest_rafly
+cd eid_technicaltest_achmad-rafly-khatamy-zain
 composer install
 npm install
 ```
