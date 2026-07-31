@@ -19,6 +19,11 @@ new #[Layout('layouts.guest')] class extends Component
 
         Session::regenerate();
 
+        session()->flash('snackbar', [
+            'message' => 'Welcome back, ' . auth()->user()->name . '!',
+            'type' => 'success',
+        ]);
+
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }
 }; ?>

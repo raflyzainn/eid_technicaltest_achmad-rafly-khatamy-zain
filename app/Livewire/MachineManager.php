@@ -14,9 +14,11 @@ class MachineManager extends Component
     public $editName = '';
     public $editType = '';
     public $editStatus = '';
+    public $deletingMachine = null;
 
     public $showForm = false;
     public $showEditForm = false;
+    public $showDeleteModal = false;
 
     public function mount()
     {
@@ -43,7 +45,7 @@ class MachineManager extends Component
             'type' => 'required|in:CNC,Milling,Press,Assembly',
         ]);
 
-        Machine::create([
+        $machine = Machine::create([
             'name' => $this->name,
             'type' => $this->type,
             'status' => 'Idle',
@@ -52,6 +54,8 @@ class MachineManager extends Component
         $this->reset(['name', 'type']);
         $this->showForm = false;
         $this->loadMachines();
+
+        $this->dispatch('snackbar', message: "Machine {$machine->name} created successfully.", type: 'success');
     }
 
     public function edit($id)
@@ -81,6 +85,8 @@ class MachineManager extends Component
 
         $this->cancelEdit();
         $this->loadMachines();
+
+        $this->dispatch('snackbar', message: "Machine {$machine->name} updated.", type: 'success');
     }
 
     public function cancelEdit()
@@ -90,10 +96,29 @@ class MachineManager extends Component
         $this->reset(['editName', 'editType', 'editStatus']);
     }
 
-    public function delete($id)
+    public function confirmDelete($id)
     {
-        Machine::findOrFail($id)->delete();
-        $this->loadMachines();
+        $this->deletingMachine = Machine::findOrFail($id);
+        $this->showDeleteModal = true;
+    }
+
+    public function delete()
+    {
+        if ($this->deletingMachine) {
+            $name = $this->deletingMachine->name;
+            $this->deletingMachine->delete();
+            $this->deletingMachine = null;
+            $this->showDeleteModal = false;
+            $this->loadMachines();
+
+            $this->dispatch('snackbar', message: "Machine {$name} deleted.", type: 'success');
+        }
+    }
+
+    public function cancelDelete()
+    {
+        $this->deletingMachine = null;
+        $this->showDeleteModal = false;
     }
 
     public function render()

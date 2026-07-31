@@ -13,7 +13,9 @@
         @livewireStyles
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-gray-100 min-h-screen flex flex-col items-center justify-center px-4">
+    <body class="font-sans antialiased bg-gray-100 min-h-screen flex flex-col items-center justify-center px-4" x-data="{ snackbar: { show: false, message: '', type: 'success' } }"
+          @snackbar.window="snackbar = { show: true, message: $event.detail.message, type: $event.detail.type || 'success' }; setTimeout(() => snackbar.show = false, 4000)"
+          x-init="@if(session('logout_snackbar')) snackbar = { show: true, message: '{{ session('logout_snackbar') }}', type: 'info' }; setTimeout(() => snackbar.show = false, 4000) @endif">
         <div class="w-full max-w-sm">
             <div class="text-center mb-8">
                 <div class="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-xl mb-4">
@@ -30,6 +32,17 @@
             </div>
 
             <p class="text-center text-xs text-gray-400 mt-6">ElectroIntiDinamika &copy; {{ date('Y') }}</p>
+        </div>
+
+        <div x-show="snackbar.show" x-transition:enter="transform ease-out duration-300 transition" x-transition:enter-start="translate-y-2 opacity-0" x-transition:enter-end="translate-y-0 opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+             class="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-lg shadow-lg text-sm font-medium text-white"
+             :class="snackbar.type === 'success' ? 'bg-green-600' : snackbar.type === 'error' ? 'bg-red-600' : 'bg-blue-600'">
+            <div class="flex items-center gap-2">
+                <svg x-show="snackbar.type === 'success'" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                <svg x-show="snackbar.type === 'error'" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg x-show="snackbar.type === 'info'" class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span x-text="snackbar.message"></span>
+            </div>
         </div>
     </body>
 </html>

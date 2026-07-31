@@ -9,6 +9,8 @@ new class extends Component
     {
         $logout();
 
+        session()->flash('logout_snackbar', 'You have been logged out.');
+
         $this->redirect('/', navigate: true);
     }
 }; ?>
